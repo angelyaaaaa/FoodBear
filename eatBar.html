@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="description" content="description"/>
+<meta name="keywords" content="keywords"/> 
+<meta name="author" content="author"/>
+<title>Eat Bar</title>
+<link rel="stylesheet" type="text/css" href="css/eatBar.css" media="screen"/>
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/eatBar.js"></script>
+<script type="text/javascript" src="js/scroll_StartStop.js"></script>
+<script type="text/javascript" src="js/shop_insert.js"></script>
+<script type="text/javascript" src="js/googleMap.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAWfsGY4VZDqxy2JNGeV5j0aFLb5hKXA60&callback=initMap" async defer></script>
+<script type="text/javascript">
+var shops = [];		
+$(function(){
+	// 收集各定位點資料
+	var anchors = [];
+	$('.anchor').each(function(){
+		var anchor = {};
+		anchor.id = $(this).attr('id');
+		anchor.top = $(this).offset().top;
+		anchor.top_buffer = $(this).offset().top - 200;	
+		anchors.push(anchor);
+	});	
+	
+	// 各個餐廳資訊		
+	shops.push(new shop("燒臘", "106台灣台北市大安區溫州街", 25.0226503, 121.53324380000004));
+	shops.push(new shop("池上便當", "台灣台北市羅斯福路五段", 25.005664, 121.53889959999992));
+	shops.push(new shop("京站時尚廣場", "103台灣台北市大同區承德路一段1號", 25.0493618, 121.51682989999995));
+	shops.push(new shop("威秀影城", "台灣台北市大同區市民大道一段209號", 25.0487857, 121.51856900000007));
+	shops.push(new shop("新美式文化料理", "台灣台北市大同區華陰街57號", 25.0496105, 121.51866530000007));
+	shops.push(new shop("北平稻香村", "台北市大安區和平東路一段242號", 25.0226503, 121.51866530000007));
+	
+	
+	jQuery(window).scroll(function(){		
+		// $this = jQuery(this);
+		var $this_top =	jQuery(this).scrollTop();
+
+		// 當高度小於100時，將top_bar放置到上方 
+		if($this_top > 120){			
+			$('#top_bar').css({position: 'fixed', top: '0px', background: '#FFFFFF', height: '75px', opacity: '0.6'});
+			$('#logo').css({height: '75px', width: '75px', position: 'fixed', top: '0px', left: '0px'});
+			$('.link').attr('src', 'img/dot_blue.png');	
+			$('#shop_display').css('line-height', '75px');	
+		}else{
+			$('#top_bar').css({position: 'absolute', top: '120px', background: '#32b3bf', height: '150px', opacity: '0.3'});
+			$('#logo').css({height: '200px', width: '200px', position: 'absolute', top: '60px', left: '50px'});	
+			$('.link').attr('src', 'img/dot_white.png');	
+			$('#shop_display').css('line-height', '150px');	
+		}			
+	});
+	
+	// 讓往下拉快要到時可以自動移到定位點
+	jQuery(window).bind('scrollstop', function(e){
+		// scroll_anchor		
+		scroll_anchor($('body').scrollTop(), anchors);
+	});
+	
+	// 讓拉霸搖桿動作
+	$('#lead_btn').click(function(){
+		var $this = $(this);
+		$this.css('animation-name', 'lead_btn');		
+	});	
+	$('#lead_btn').on('animationend', function(){
+		var $this = $(this);
+		$this.css('animation-name', '');
+		
+		// 讓文字閃爍		
+		//var resturtant = textBlink(shops);				
+		searchResturtant(shops);		
+	});
+		
+	
+	// 點擊鈕之後可以變換位置
+	$('#scrollNav a').click(function(){
+		var scrollToAnchor = $(this).attr('page-scroll');
+		$('body').animate({scrollTop:$(scrollToAnchor).offset().top}, 1000);		
+	});
+});
+
+// 讓往下拉快要到時可以自動移到定位點
+function scroll_anchor(scrollTop, anchors){
+	for(var i=0; i < anchors.length; i++){
+		if(anchors[i].top_buffer < scrollTop &&
+			scrollTop < anchors[i].top && 
+			0 < scrollTop){
+			$('body').animate({scrollTop: anchors[i].top}, 1000);
+			break;
+		}		
+	}
+}
+
+function searchResturtant(shops){
+	var stop = textBlink(shops);
+	setTimeout(function(){
+		clearInterval(stop);		
+		
+		$("#shop_display").removeClass('textSelect').addClass('textSelected');
+		var resturtant = shops[start%len];		
+		$('body').animate({scrollTop:$('#second').offset().top}, 1000);
+		map.panTo(resturtant.lat_lng);
+		addMarker(resturtant.lat_lng, map);
+		
+		
+	}, 4000);
+}
+
+var len;
+var start;
+function textBlink(shops){ 
+	// 逐漸加快/變慢
+	// 讓文字做上下移動、循環
+	// 單一文字blink
+	
+	len = shops.length
+	start = Math.floor(Math.random() * 1000) % len;				
+	
+	$("#shop_display").removeClass('textSelected').addClass('textSelect');
+	return setInterval(function(){
+		var len = shops.length;
+		$("#shop_display").text(shops[start%len].name);		
+		start++;
+	}, 100);	
+	
+	
+	// 想要嘗試速度變化
+	/*
+	var timeInterval = 500;
+	var stop;
+	stop = setInterval(function(){
+		timeInterval += timeInterval == 0 ? 100 : -100;
+		if(timeInterval == 0)
+			
+		
+		setInterval(function(){
+			$("#shop_display").text(shops[start%len].name);		
+			start++;
+		}, timeInterval);	
+		if(timeInterval == 500){
+			clearInterval(stop);
+		}	
+	}, 500);
+	*/	
+	//return shops[start%len];
+}
+
+
+
+
+var markers = [];
+function addMarker(lat_lng, map){
+	var marker = '';
+	// 先將之前所有tag移掉
+	markers.forEach(function(value, index){	
+		markers[index].setMap(null);
+	});	
+	
+	// 再插旗
+	marker = new google.maps.Marker({
+		position: lat_lng,		
+		map: map	
+	});
+	
+	// 將旗紀錄下
+	markers.push(marker);
+}
+</script>
+<style>
+body{
+	margin: 0;
+	min-width: 980px;
+	padding: 0;
+}
+
+.float_left{
+	float: left;
+}
+.float_right{
+	float: right;
+}
+.float_clear{
+	clear: both;
+}
+
+#first{		
+	background:url(img/food_bg3.jpg) 0 0 no-repeat fixed;	
+	background-size: cover;
+	height: 700px;	
+	width: 100%;
+	margin: 0 auto;
+	padding: 0;
+}
+
+#second{
+	background:url(img/shop_obg2.jpg) 50% 0 no-repeat fixed;	
+	background-size: cover;
+	height: 700px;	
+	width: 100%;
+	overflow: hidden;
+	margin: 0 auto;
+	padding: 0;
+}
+
+#third{
+	background:url(img/eat_bg.jpg) 50% 20% no-repeat fixed;	
+	background-size: cover;
+	height: 800px;	
+	width: 100%;
+}
+.story{
+	//margin: 0 auto;
+	min-width: 980px;
+	overflow: auto;
+	width: 980px;
+	height: 650px;
+}
+
+#top_bar{
+	height: 150px;
+	width: 100%;
+	
+	background: #32b3bf;
+	opacity: 0.6;
+	
+	position: absolute;
+	top: 120px;	 
+	left: 0px;
+	z-index: 100;
+	
+	-webkit-transition:all .4s ease;
+	-moz-transition:all .4s ease;
+	-o-transition:all .4s ease;
+	-ms-transition:all .4s ease;
+	transition:all .4s ease;
+}
+#logo{
+	height: 200px;
+	width:  200px;
+	
+	position: absolute;
+	top: 60px;
+	left: 50px;
+	
+	z-index: 200;
+	
+	// CSS3 transition
+	transition:all .4s ease
+	-o-transition:all .4s ease;
+	-ms-transition:all .4s ease;
+	-moz-transition:all .4s ease;
+	-webkit-transition:all .4s ease;
+}
+
+#bar{
+	border: 2px black solid;
+	background: gray;
+	width: 300px;
+	height: 20px;
+	border-radius: 5px;
+	padding: 0px;
+	
+	position: absolute;	
+	top: 340px;
+	left: 370px;	
+}
+
+#lead_btn{
+	width: 40px;
+	height: 40px;
+	border-radius:50%;
+	border: 1px black solid;
+	background: red;
+	margin: 0;
+	padding:0;
+	z-index:2;
+	
+	position: absolute;
+	top: -10px;
+	left: -20px;
+	
+	animation-duration: 2s;
+	
+	// CSS3陰影
+	-webkit-box-shadow: 0px 8px 15px #333;
+	-moz-box-shadow: 0px 8px 15px #333;
+	box-shadow: 0px 8px 15px #333;	
+	
+	// CSS3 Transition
+	transition: all .3s ease-out;	
+	-o-transition: all .3s ease-out;
+	-ms-transition: all .3s ease-out;
+	-moz-transition: all .3s ease-out;
+	-webkit-transition: all .3s ease-out;
+}
+
+.lead_btn{
+	animation-name: lead_btn;
+	//animation-duration: 2s;
+}
+
+@-webkit-keyframes lead_btn {
+    0%   {left: -20px;}
+    50%  {left: 280px;}
+    100% {left: -20px;}
+}
+
+@-moz-keyframes lead_btn {
+     0%   {left: -20px;}
+    50%  {left: 280px;}
+    100% {left: -20px;}
+}
+
+@keyframes lead_btn {
+    0%   {left: -20px;}
+    50%  {left: 280px;}
+    100% {left: -20px;}
+}
+
+#shop_display{
+	text-align: center;
+	line-height: 150px;
+	
+	position: absolute;
+	left: 440px;		
+	
+	// CSS3 transition
+	transition:all .4s ease
+	-o-transition:all .4s ease;
+	-ms-transition:all .4s ease;
+	-moz-transition:all .4s ease;
+	-webkit-transition:all .4s ease;
+}
+
+.textSelect{
+	font-family: "微軟正黑體", Lato, Streetvertising;
+	font-size: 30px;
+	font-weight: 600;	
+	color: black;
+	
+	// CSS3 transition
+	transition:all .4s ease
+	-o-transition:all .4s ease;
+	-ms-transition:all .4s ease;
+	-moz-transition:all .4s ease;
+	-webkit-transition:all .4s ease;
+}
+.textSelected{
+	font-family: "微軟正黑體", Lato, Streetvertising;
+	font-size: 50px;
+	font-weight: 800;	
+	color: red;
+
+	// CSS3 transition
+	transition:all .4s ease
+	-o-transition:all .4s ease;
+	-ms-transition:all .4s ease;
+	-moz-transition:all .4s ease;
+	-webkit-transition:all .4s ease;
+}
+
+#map{
+	height: 70%;
+	width: 70%;	
+	
+	position: relative;
+	top: 80px;
+	left: 200px;
+	
+}
+</style>
+
+</head>
+<body >	
+	<div id="first" class="anchor">					
+		<img id="logo" src="img/logo1_dbg.png"/>
+		<div id="top_bar">
+			<div id="scrollNav" class="float_right">
+				<a href="#" page-scroll="#first"><img src="img/dot_white.png" alt="Link" title="First Page" class="link"/></a>&nbsp;&nbsp;
+				<a href="#" page-scroll="#second"><img src="img/dot_white.png" alt="Link" title="Second Page" class="link"/></a>&nbsp;&nbsp;
+				<a href="#" page-scroll="#third"><img src="img/dot_white.png" alt="Link" title="Third Page" class="link"/></a>&nbsp;&nbsp;
+			</div>
+			<div class="clear"></div>			
+			<span id="shop_display" class="textSelect"></span>
+			
+		</div>
+				
+		<div id="bar">			
+			<div id="lead_btn">	</div>
+		</div>		
+	</div> <!--#first-->			
+	
+	
+	<div id="second" class="anchor">
+		<div class="story">	    	
+			<div id="map"></div>
+	    </div> <!--.story-->
+	</div> <!--#second-->	
+	
+	<div id="third" class="anchor">
+		<div class="story">	    	
+	    </div> <!--.story-->
+	</div> <!--#third-->	
+	
+	<br><br><br><br><br><br><br><br><br><br><br><br>
+	
+
+</body>
+</html>
